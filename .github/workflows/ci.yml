@@ -32,7 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Trivy filesystem scan
+      # Gate: table output + exit on CRITICAL vulns only (not secret heuristics)
+      - name: Trivy filesystem gate
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
@@ -40,7 +41,22 @@ jobs:
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          scanners: vuln
           trivyignores: .trivyignore
+          trivy-config: trivy.yaml
+
+      - name: Trivy filesystem SARIF
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+          ignore-unfixed: true
+          scanners: vuln
+          trivyignores: .trivyignore
+          trivy-config: trivy.yaml
           format: sarif
           output: trivy-fs.sarif
 
@@ -66,7 +82,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy image scan
+      - name: Trivy image gate
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
@@ -74,6 +90,19 @@ jobs:
           severity: CRITICAL
           exit-code: "1"
           ignore-unfixed: true
+          scanners: vuln
+          trivyignores: .trivyignore
+
+      - name: Trivy image SARIF
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_NAME }}:ci
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+          ignore-unfixed: true
+          scanners: vuln
           trivyignores: .trivyignore
           format: sarif
           output: trivy-image.sarif

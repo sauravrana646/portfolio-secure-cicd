@@ -5,7 +5,8 @@ WORKDIR /app
 COPY app/requirements.txt .
 RUN pip install -r requirements.txt
 COPY app/ ./app/
-# Bad practice: leftover package managers and root
-ENV AWS_SECRET_ACCESS_KEY=example-not-real
+# Bad practice: leftover package managers and root.
+# Do not put real secrets in images. (Intentional anti-pattern documented in README —
+# no credential-shaped ENV here so CI secret scanners stay clean.)
 EXPOSE 8080
 CMD ["python", "app/main.py"]

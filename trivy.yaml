@@ -1,0 +1,5 @@
+# Trivy project config — https://trivy.dev/docs/configuration/
+scan:
+  # Demo-only insecure Dockerfile; CI builds the hardened Dockerfile.
+  skip-files:
+    - Dockerfile.vulnerable
