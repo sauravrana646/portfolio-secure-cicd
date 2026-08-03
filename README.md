@@ -2,6 +2,8 @@
 
 > CI/CD with container security gates — Trivy, SBOM, and fail-on-CRITICAL PR checks so startups ship without ignoring CRITICAL image risk.
 
+![Demo: /healthz ok and Trivy CRITICAL gate](docs/images/demo.jpg)
+
 ## Problem this solves for a startup
 
 Optional scanners that nobody fails the build on. This repo shows a working pattern: unit tests → Docker build → Trivy (fs + image) → SBOM → SARIF, with CRITICAL findings failing the PR.
