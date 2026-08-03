@@ -1,0 +1,11 @@
+# INTENTIONALLY INSECURE — for local before/after demos only. CI builds Dockerfile.
+# Problems: root user, fat base, pip as root, secrets-ish pattern, no multi-stage.
+FROM python:3.9
+WORKDIR /app
+COPY app/requirements.txt .
+RUN pip install -r requirements.txt
+COPY app/ ./app/
+# Bad practice: leftover package managers and root
+ENV AWS_SECRET_ACCESS_KEY=example-not-real
+EXPOSE 8080
+CMD ["python", "app/main.py"]

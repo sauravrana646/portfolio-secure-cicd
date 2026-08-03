@@ -1,0 +1,4 @@
+# Documented exceptions only. Prefer fixing over ignoring.
+# Format: CVE-YYYY-NNNN # reason + ticket/owner
+# Example (disabled):
+# CVE-2024-0000 # false positive in transitive pkg; tracked DEVOPS-123
