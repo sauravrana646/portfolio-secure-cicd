@@ -75,7 +75,7 @@ jobs:
         uses: docker/build-push-action@v6.18.0
         with:
           context: .
-          file: Dockerfile
+          file: Dockerfile.vulnerable
           push: false
           load: true
           tags: ${{ env.IMAGE_NAME }}:ci
