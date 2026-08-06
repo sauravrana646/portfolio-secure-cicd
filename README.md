@@ -1,8 +1,20 @@
 # portfolio-secure-cicd
 
+[![CI](https://github.com/sauravrana646/portfolio-secure-cicd/actions/workflows/ci.yml/badge.svg)](https://github.com/sauravrana646/portfolio-secure-cicd/actions/workflows/ci.yml)
+
 > CI/CD with container security gates — Trivy, SBOM, and fail-on-CRITICAL PR checks so startups ship without ignoring CRITICAL image risk.
 
 ![Demo: /healthz ok and Trivy CRITICAL gate](docs/images/demo.jpg)
+
+## Demo in 5 minutes
+
+```bash
+docker compose up --build -d
+curl -s http://127.0.0.1:8080/healthz   # {"status":"ok"}
+docker compose down
+```
+
+**Gate fail demo (sales):** open a PR from branch `demo/fail-critical` — CI builds the intentionally insecure image and the Trivy CRITICAL gate fails. Compare with green `main`.
 
 ## Problem this solves for a startup
 
