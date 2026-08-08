@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   guard:
+    # Explicit check name so rulesets can require "promotion-guard / guard"
+    name: promotion-guard / guard
     runs-on: ubuntu-latest
     steps:
       - name: Enforce promotion source branch
