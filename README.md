@@ -61,15 +61,16 @@ flowchart LR
 | `feature/*` → `dev` | PR (any source) | `ci` (quality-gate) |
 | `dev` → `uat` | PR (source must be `dev`) | `ci` + `promotion-guard` |
 | `uat` → `main` (prod) | PR (source must be `uat`) | `ci` + `promotion-guard` |
-| Release | Manual tag `vX.Y.Z` on `main` | Re-run quality-gate → GHCR push → cosign sign/attest → SLSA provenance → GitHub Release |
+| Release | Manual tag `vX.Y.Z` on `main` | quality-gate → **GitHub Environment `production` approval** → GHCR → cosign sign/attest → SLSA → GitHub Release |
 
 - There is no separate `prod` branch; `main` is prod.
 - Images are signed by **digest** (`ghcr.io/<repo>@sha256:...`), not by mutable tags.
 - Cosign private key material is fetched at release time from Infisical via OIDC (no long-lived secrets in GitHub).
+- The release job targets GitHub Environment **`production`** (required reviewer + only tags matching `v*`).
 
-### Release prerequisites (repo variables)
+### Release prerequisites (GitHub Environment `production`)
 
-Set these GitHub **Variables** before cutting a release tag:
+Create Environment `production` (see `docs/BRANCH_PROTECTION_UI.md`) and set **environment variables**:
 
 | Variable | Purpose |
 |----------|---------|
@@ -78,13 +79,14 @@ Set these GitHub **Variables** before cutting a release tag:
 
 Infisical project `devops-portfolio-x-k3-y`, secret path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.
 
-Environments: Development=`dev`, uat=`staging`, Production=`prod`.
+Infisical env mapping: Development=`dev`, uat=`staging`, Production=`prod`.
 
 ```bash
 # After uat → main is merged:
 git checkout main && git pull
 git tag v0.1.0
 git push origin v0.1.0
+# Then approve the pending "production" environment deployment in the Actions UI
 ```
 
 ## Stack

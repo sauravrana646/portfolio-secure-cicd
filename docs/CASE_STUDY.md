@@ -14,7 +14,7 @@ Container images and CI pipelines had no CRITICAL severity gate. Scans ran as op
 2. Multi-stage, non-root Dockerfiles; slim bases; remove build tools from runtime
 3. Generate SBOM on every build; upload SARIF to GitHub Security
 4. Enforce linear promotion: `feature/*` → `dev` → `uat` → `main` (prod) via PR checks + a promotion-guard workflow (source-branch enforcement GitHub cannot do natively)
-5. Manual semver tag release from `main`: push to GHCR by tag + digest, sign and attest with cosign (private key via Infisical OIDC), attach Syft SPDX SBOM attestation, emit SLSA build provenance, publish a GitHub Release with changelog
+5. Manual semver tag release from `main`: GitHub Environment `production` gate (required reviewer + `v*` tags only), then push to GHCR by tag + digest, sign and attest with cosign (private key via Infisical OIDC), attach Syft SPDX SBOM attestation, emit SLSA build provenance, publish a GitHub Release with changelog
 6. Document `.trivyignore` policy with owners and expiry
 7. Optional OIDC deploy path so CI never stores long-lived cloud keys
 

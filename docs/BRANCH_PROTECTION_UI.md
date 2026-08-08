@@ -94,20 +94,50 @@ Classic UI has no native “source branch must be X” rule — that is why `pro
 
 ---
 
-## Repo variables (release signing) — also UI
+## GitHub Environment: `production` (release job)
 
-**Path:** Settings → Secrets and variables → Actions → **Variables** tab
+The `release` job in `.github/workflows/release.yml` uses `environment: production`.
+Create and harden it in the UI (API from this agent is 403).
+
+**Path:** Settings → Environments → **New environment** → name: `production`
+
+### Protection rules
+
+1. **Required reviewers**
+   - Enable
+   - Add yourself (`sauravrana646`) — or a release approver
+   - Leave **Prevent self-review** **off** if you are the only maintainer (otherwise you cannot approve your own tag-triggered release)
+2. **Wait timer** — optional (`0` is fine; use e.g. 5–15 minutes if you want a cool-down)
+3. **Deployment branches and tags**
+   - Choose **Selected branches and tags**
+   - Add a **tag** rule: `v*`  
+     (only semver-style tags can run jobs that target this environment)
+   - Do **not** allow all branches
+
+### Environment variables (preferred over repo-wide)
+
+On the `production` environment → **Environment variables**:
 
 | Name | Value |
 |------|--------|
-| `INFISICAL_IDENTITY_ID` | *(your Infisical machine identity ID)* |
-| `INFISICAL_ENV_SLUG` | `prod` (releases); also available: `dev`, `staging` |
+| `INFISICAL_IDENTITY_ID` | `b0d5c6ed-5178-416d-80d2-cec4ee521424` |
+| `INFISICAL_ENV_SLUG` | `prod` |
+
+Jobs with `environment: production` read these via `${{ vars.* }}` (environment vars override repo vars of the same name).
 
 Infisical project `devops-portfolio-x-k3-y`, path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.  
 Env mapping: Development=`dev`, uat=`staging`, Production=`prod`.  
 Configure the machine identity for GitHub OIDC against this repo.
 
 Do **not** store the cosign private key as a GitHub Actions secret if Infisical OIDC is in use.
+
+### What this adds
+
+| Layer | Control |
+|-------|---------|
+| Git promotion | rulesets + `promotion-guard` |
+| Release execution | Environment required reviewer + tag `v*` only |
+| Key material | Infisical OIDC (`prod` / `/cosign`) |
 
 ---
 
@@ -118,4 +148,4 @@ Do **not** store the cosign private key as a GitHub Actions secret if Infisical 
 3. PR `feature/*` → `uat`: `promotion-guard` **fails**.
 4. PR `uat` → `main`: `promotion-guard` passes.
 5. PR `dev` → `main`: `promotion-guard` **fails**.
-6. Maintainer pushes `v0.1.0` on `main`: `release` workflow runs (after Infisical variables are set).
+6. Maintainer pushes `v0.1.0` on `main`: `release` quality-gate runs, then `release` job waits for **production** environment approval; after approve → GHCR + cosign + GitHub Release.

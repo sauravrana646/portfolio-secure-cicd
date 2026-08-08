@@ -25,6 +25,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: quality-gate
+    # GitHub Environment gate: required reviewer + tag policy (configure in UI).
+    # Env vars INFISICAL_* can live on this environment (preferred over repo-wide).
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}
     outputs:
       digest: ${{ steps.build.outputs.digest }}
       image_ref: ${{ steps.meta.outputs.image_ref }}
