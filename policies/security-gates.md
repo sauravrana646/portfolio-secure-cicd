@@ -4,6 +4,8 @@
 
 Shared reusable workflow: `.github/workflows/quality-gate.yml` (invoked by `ci.yml` and `release.yml`).
 
+`ci.yml` runs on `pull_request` and `push` to `dev` / `uat` / `main`. For promotion PRs whose head is a long-lived branch, a `push` would otherwise duplicate the `pull_request` checks on the same SHA — `ci.yml` skips the push quality-gate when that SHA is already the head of an open PR.
+
 | Check | Action |
 |-------|--------|
 | Trivy filesystem scan — CRITICAL | Fail check |
