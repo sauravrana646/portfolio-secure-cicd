@@ -81,15 +81,16 @@ jobs:
 
       # PLACEHOLDERS: set repo Variables before enabling signing:
       #   INFISICAL_IDENTITY_ID  — Infisical machine identity ID (OIDC)
-      #   INFISICAL_ENV_SLUG     — Infisical environment slug (e.g. prod)
-      # Secrets live in Infisical project homelab-sq-te at /cosign:
+      #   INFISICAL_ENV_SLUG     — use prod for releases (dev | staging | prod)
+      # Secrets live in Infisical project devops-portfolio-x-k3-y at /cosign:
       #   cosign-private-key, cosign-public-key, cosign-key-password
+      # Env mapping: Development=dev, uat=staging, Production=prod
       - name: Fetch cosign keys from Infisical
         uses: Infisical/secrets-action@v1.0.9
         with:
           method: oidc
           identity-id: ${{ vars.INFISICAL_IDENTITY_ID }}
-          project-slug: homelab-sq-te
+          project-slug: devops-portfolio-x-k3-y
           env-slug: ${{ vars.INFISICAL_ENV_SLUG }}
           secret-path: /cosign
           export-type: env

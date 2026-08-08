@@ -43,7 +43,7 @@ feature/* ──PR──► dev ──PR (guard)──► uat ──PR (guard)�
 - **Quality gate** runs on every PR/push to `dev`, `uat`, and `main`.
 - **Promotion guard** fails PRs into `uat` unless the source is `dev`, and into `main` unless the source is `uat`.
 - **Release** signs the **digest** (`@sha256:...`), never a mutable tag alone. Consumers pull `:vX.Y.Z` and verify against the digest recorded in the release notes.
-- Cosign keys stay in Infisical (`homelab-sq-te` / `/cosign`); the release job federates via OIDC using a machine identity — no cosign private key stored as a GitHub Actions secret.
+- Cosign keys stay in Infisical (`devops-portfolio-x-k3-y` / `/cosign`, production env `prod`); the release job federates via OIDC using a machine identity — no cosign private key stored as a GitHub Actions secret.
 
 ## Results (from real experience / analogous)
 

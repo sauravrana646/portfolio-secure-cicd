@@ -101,9 +101,11 @@ Classic UI has no native “source branch must be X” rule — that is why `pro
 | Name | Value |
 |------|--------|
 | `INFISICAL_IDENTITY_ID` | *(your Infisical machine identity ID)* |
-| `INFISICAL_ENV_SLUG` | *(e.g. `prod`)* |
+| `INFISICAL_ENV_SLUG` | `prod` (releases); also available: `dev`, `staging` |
 
-Infisical project `homelab-sq-te`, path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`. Configure the machine identity for GitHub OIDC against this repo.
+Infisical project `devops-portfolio-x-k3-y`, path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.  
+Env mapping: Development=`dev`, uat=`staging`, Production=`prod`.  
+Configure the machine identity for GitHub OIDC against this repo.
 
 Do **not** store the cosign private key as a GitHub Actions secret if Infisical OIDC is in use.
 

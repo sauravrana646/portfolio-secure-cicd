@@ -74,9 +74,11 @@ Set these GitHub **Variables** before cutting a release tag:
 | Variable | Purpose |
 |----------|---------|
 | `INFISICAL_IDENTITY_ID` | Infisical machine identity ID for OIDC |
-| `INFISICAL_ENV_SLUG` | Infisical environment slug (e.g. `prod`) |
+| `INFISICAL_ENV_SLUG` | Infisical environment slug — use `prod` for releases |
 
-Infisical project `homelab-sq-te`, secret path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.
+Infisical project `devops-portfolio-x-k3-y`, secret path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.
+
+Environments: Development=`dev`, uat=`staging`, Production=`prod`.
 
 ```bash
 # After uat → main is merged:
