@@ -1,0 +1,168 @@
+# Manual semver release: push tag vX.Y.Z on main after uat → main merge.
+# Signs/attests the GHCR image digest with cosign keys from Infisical (OIDC).
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+  attestations: write
+  security-events: write
+  actions: read
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  quality-gate:
+    uses: ./.github/workflows/quality-gate.yml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    # GitHub Environment gate: required reviewer + tag policy (configure in UI).
+    # Env vars INFISICAL_* can live on this environment (preferred over repo-wide).
+    environment:
+      name: release
+      url: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      image_ref: ${{ steps.meta.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Lowercase image name for GHCR
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3.4.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.10.0
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Define immutable IMAGE_REF
+        id: meta
+        run: |
+          set -euo pipefail
+          DIGEST="${{ steps.build.outputs.digest }}"
+          IMAGE_REF="${{ env.REGISTRY }}/${IMAGE_NAME}@${DIGEST}"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_REF=${IMAGE_REF}" >> "$GITHUB_ENV"
+          echo "Canonical image identity: ${IMAGE_REF}"
+
+      - name: Generate SBOM (Syft) for pushed digest
+        uses: anchore/sbom-action@v0.20.0
+        with:
+          image: ${{ steps.meta.outputs.image_ref }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.10.1
+
+      # PLACEHOLDERS: set repo Variables before enabling signing:
+      #   INFISICAL_IDENTITY_ID  — Infisical machine identity ID (OIDC)
+      #   INFISICAL_ENV_SLUG     — use prod for releases (dev | staging | prod)
+      # Secrets live in Infisical project devops-portfolio-x-k3-y at /cosign:
+      #   cosign-private-key, cosign-public-key, cosign-key-password
+      # Env mapping: Development=dev, uat=staging, Production=prod
+      - name: Fetch cosign keys from Infisical
+        uses: Infisical/secrets-action@v1.0.9
+        with:
+          method: oidc
+          identity-id: ${{ vars.INFISICAL_IDENTITY_ID }}
+          project-slug: devops-portfolio-x-k3-y
+          env-slug: ${{ vars.INFISICAL_ENV_SLUG }}
+          secret-path: /cosign
+          export-type: env
+
+      - name: Sign image (digest)
+        run: |
+          set -euo pipefail
+          export COSIGN_PASSWORD="$(printenv cosign-key-password)"
+          cosign sign --yes --key env://cosign-private-key "${IMAGE_REF}"
+
+      - name: Verify signature
+        run: |
+          set -euo pipefail
+          cosign verify --key env://cosign-public-key "${IMAGE_REF}"
+
+      - name: Attest SBOM (SPDX)
+        run: |
+          set -euo pipefail
+          export COSIGN_PASSWORD="$(printenv cosign-key-password)"
+          cosign attest --yes --key env://cosign-private-key \
+            --type spdx --predicate sbom.spdx.json "${IMAGE_REF}"
+
+      - name: Attest build provenance (SLSA)
+        uses: actions/attest-build-provenance@v2.4.0
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2.6.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: sbom.spdx.json
+          body: |
+            ## Container image
+
+            | Field | Value |
+            |-------|-------|
+            | Tag | `ghcr.io/${{ github.repository }}:${{ github.ref_name }}` |
+            | Commit | `${{ github.sha }}` |
+            | Digest (canonical) | `${{ steps.build.outputs.digest }}` |
+            | Image ref | `ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}` |
+
+            Deploy pinned by digest when possible:
+
+            ```text
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}@${{ steps.build.outputs.digest }}
+            ```
+
+            ## Supply chain
+
+            - Cosign signature over the digest (key material via Infisical OIDC)
+            - Cosign SPDX SBOM attestation
+            - GitHub Actions SLSA build provenance attestation
+            - Attached artifact: `sbom.spdx.json` (Syft)
+
+            Verify:
+
+            ```bash
+            cosign verify --key cosign.pub \
+              ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+            cosign verify-attestation --key cosign.pub --type spdx \
+              ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+            gh attestation verify \
+              oci://ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }} \
+              --repo ${{ github.repository }}
+            ```
