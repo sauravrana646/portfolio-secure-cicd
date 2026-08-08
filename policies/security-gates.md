@@ -25,13 +25,13 @@ Workflow: `.github/workflows/promotion-guard.yml` (required on `uat` and `main`)
 
 ## Release gate (manual tag `vX.Y.Z` on `main`)
 
-Job uses GitHub Environment **`production`** (required reviewer; deployment tag policy `v*` only).
+Job uses GitHub Environment **`release`** (required reviewer; deployment tag policy `v*` only).
 
 | Check | Action |
 |-------|--------|
 | Re-run quality-gate | Fail release if CRITICAL / tests fail |
 | Environment approval | `release` job waits until a required reviewer approves |
-| Tag policy | Only refs matching tag pattern `v*` may use `production` |
+| Tag policy | Only refs matching tag pattern `v*` may use `release` |
 | GHCR push | Tags `:vX.Y.Z` and `:<sha>`; canonical identity is digest |
 | Cosign sign + verify | Sign digest with Infisical-backed key |
 | Cosign SPDX attest | Attest Syft `sbom.spdx.json` to digest |

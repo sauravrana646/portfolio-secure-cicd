@@ -28,7 +28,7 @@ jobs:
     # GitHub Environment gate: required reviewer + tag policy (configure in UI).
     # Env vars INFISICAL_* can live on this environment (preferred over repo-wide).
     environment:
-      name: production
+      name: release
       url: https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}
     outputs:
       digest: ${{ steps.build.outputs.digest }}

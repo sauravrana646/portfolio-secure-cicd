@@ -1,11 +1,11 @@
-# GitHub Environment `production` — UI setup
+# GitHub Environment `release` — UI setup
 
 Used by the `release` job in `.github/workflows/release.yml`.
 
 ## Create
 
 1. Repo → **Settings** → **Environments** → **New environment**
-2. Name: `production`
+2. Name: `release`
 3. Configure protection rules (below) → **Save protection rules**
 
 ## Protection rules
@@ -30,7 +30,7 @@ This matches the workflow trigger `on.push.tags: ['v*.*.*']` and blocks accident
 
 ## Environment variables
 
-On Environment `production` → **Environment variables** → Add:
+On Environment `release` → **Environment variables** → Add:
 
 | Name | Value |
 |------|--------|
@@ -43,6 +43,6 @@ Prefer these on the environment (not repo-wide) so only the gated release job se
 
 1. Someone with tag permission pushes `vX.Y.Z`
 2. `quality-gate` runs
-3. `release` job enters **Waiting** for `production` environment approval
+3. `release` job enters **Waiting** for `release` environment approval
 4. Reviewer approves in the Actions run UI
 5. Job continues: GHCR push → Infisical → cosign → provenance → GitHub Release

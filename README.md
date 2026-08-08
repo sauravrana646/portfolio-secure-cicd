@@ -61,16 +61,16 @@ flowchart LR
 | `feature/*` → `dev` | PR (any source) | `ci` (quality-gate) |
 | `dev` → `uat` | PR (source must be `dev`) | `ci` + `promotion-guard` |
 | `uat` → `main` (prod) | PR (source must be `uat`) | `ci` + `promotion-guard` |
-| Release | Manual tag `vX.Y.Z` on `main` | quality-gate → **GitHub Environment `production` approval** → GHCR → cosign sign/attest → SLSA → GitHub Release |
+| Release | Manual tag `vX.Y.Z` on `main` | quality-gate → **GitHub Environment `release` approval** → GHCR → cosign sign/attest → SLSA → GitHub Release |
 
 - There is no separate `prod` branch; `main` is prod.
 - Images are signed by **digest** (`ghcr.io/<repo>@sha256:...`), not by mutable tags.
 - Cosign private key material is fetched at release time from Infisical via OIDC (no long-lived secrets in GitHub).
-- The release job targets GitHub Environment **`production`** (required reviewer + only tags matching `v*`).
+- The release job targets GitHub Environment **`release`** (required reviewer + only tags matching `v*`).
 
-### Release prerequisites (GitHub Environment `production`)
+### Release prerequisites (GitHub Environment `release`)
 
-Create Environment `production` (see `docs/BRANCH_PROTECTION_UI.md`) and set **environment variables**:
+Create Environment `release` (see `docs/BRANCH_PROTECTION_UI.md`) and set **environment variables**:
 
 | Variable | Purpose |
 |----------|---------|
@@ -86,7 +86,7 @@ Infisical env mapping: Development=`dev`, uat=`staging`, Production=`prod`.
 git checkout main && git pull
 git tag v0.1.0
 git push origin v0.1.0
-# Then approve the pending "production" environment deployment in the Actions UI
+# Then approve the pending "release" environment deployment in the Actions UI
 ```
 
 ## Stack

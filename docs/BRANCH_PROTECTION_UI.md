@@ -94,12 +94,12 @@ Classic UI has no native “source branch must be X” rule — that is why `pro
 
 ---
 
-## GitHub Environment: `production` (release job)
+## GitHub Environment: `release` (release job)
 
-The `release` job in `.github/workflows/release.yml` uses `environment: production`.
+The `release` job in `.github/workflows/release.yml` uses `environment: release`.
 Create and harden it in the UI (API from this agent is 403).
 
-**Path:** Settings → Environments → **New environment** → name: `production`
+**Path:** Settings → Environments → **New environment** → name: `release`
 
 ### Protection rules
 
@@ -116,14 +116,14 @@ Create and harden it in the UI (API from this agent is 403).
 
 ### Environment variables (preferred over repo-wide)
 
-On the `production` environment → **Environment variables**:
+On the `release` environment → **Environment variables**:
 
 | Name | Value |
 |------|--------|
 | `INFISICAL_IDENTITY_ID` | `b0d5c6ed-5178-416d-80d2-cec4ee521424` |
 | `INFISICAL_ENV_SLUG` | `prod` |
 
-Jobs with `environment: production` read these via `${{ vars.* }}` (environment vars override repo vars of the same name).
+Jobs with `environment: release` read these via `${{ vars.* }}` (environment vars override repo vars of the same name).
 
 Infisical project `devops-portfolio-x-k3-y`, path `/cosign`: `cosign-private-key`, `cosign-public-key`, `cosign-key-password`.  
 Env mapping: Development=`dev`, uat=`staging`, Production=`prod`.  
@@ -148,4 +148,4 @@ Do **not** store the cosign private key as a GitHub Actions secret if Infisical 
 3. PR `feature/*` → `uat`: `promotion-guard` **fails**.
 4. PR `uat` → `main`: `promotion-guard` passes.
 5. PR `dev` → `main`: `promotion-guard` **fails**.
-6. Maintainer pushes `v0.1.0` on `main`: `release` quality-gate runs, then `release` job waits for **production** environment approval; after approve → GHCR + cosign + GitHub Release.
+6. Maintainer pushes `v0.1.0` on `main`: `release` quality-gate runs, then `release` job waits for **release** environment approval; after approve → GHCR + cosign + GitHub Release.
