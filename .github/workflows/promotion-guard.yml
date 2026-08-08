@@ -1,0 +1,45 @@
+# Enforces linear promotion: feature/* → dev → uat → main (prod).
+# GitHub branch protection cannot restrict source branch natively; this check does.
+name: promotion-guard
+
+on:
+  pull_request:
+    branches: [uat, main]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce promotion source branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          echo "PR: ${HEAD_REF} → ${BASE_REF}"
+
+          if [ "${BASE_REF}" = "uat" ]; then
+            if [ "${HEAD_REF}" != "dev" ]; then
+              echo "::error::uat only accepts merges from dev (got head_ref='${HEAD_REF}')."
+              echo "Open a PR from 'dev' into 'uat', or retarget this PR."
+              exit 1
+            fi
+            echo "OK: uat accepts merge from dev."
+            exit 0
+          fi
+
+          if [ "${BASE_REF}" = "main" ]; then
+            if [ "${HEAD_REF}" != "uat" ]; then
+              echo "::error::main (prod) only accepts merges from uat (got head_ref='${HEAD_REF}')."
+              echo "Open a PR from 'uat' into 'main', or retarget this PR."
+              exit 1
+            fi
+            echo "OK: main (prod) accepts merge from uat."
+            exit 0
+          fi
+
+          echo "::error::Unexpected base branch '${BASE_REF}'."
+          exit 1
