@@ -128,7 +128,7 @@ make compare
 
 ## What was automated
 
-- PR/push CI on `dev` / `uat` / `main`: tests, image build, Trivy fs + image (fail CRITICAL), SBOM artifact, SARIF upload
+- PR/push CI on `dev` / `uat` / `main`: tests, image build, Trivy fs + image (fail CRITICAL), SBOM artifact, SARIF upload (push skips when the SHA is already covered by an open PR, to avoid duplicate checks)
 - Promotion guard: `uat` only from `dev`; `main` only from `uat`
 - Manual tag release: GHCR push, Syft SBOM, cosign sign + SPDX attest, SLSA provenance, GitHub Release
 - Documented OIDC deploy stub (disabled until AWS role exists)
