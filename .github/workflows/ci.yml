@@ -10,7 +10,46 @@ permissions:
   contents: read
   security-events: write
   actions: read
+  pull-requests: read
 
 jobs:
+  # When a long-lived head (dev/uat/main) is pushed while a promotion PR is open,
+  # both `push` and `pull_request` would otherwise run quality-gate on the same SHA
+  # and show duplicate checks on the PR. Prefer the pull_request run as the merge gate.
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      run_gate: ${{ steps.decide.outputs.run_gate }}
+    steps:
+      - name: Decide whether to run quality-gate
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            echo "run_gate=true" >> "${GITHUB_OUTPUT}"
+            echo "Reason: pull_request event (merge gate)"
+            exit 0
+          fi
+
+          # push: skip if this commit is already the head of an open PR
+          opens="$(gh api "repos/${REPO}/commits/${SHA}/pulls" \
+            -H "Accept: application/vnd.github+json" \
+            --jq '[.[] | select(.state=="open")] | length')"
+
+          if [ "${opens}" -gt 0 ]; then
+            echo "run_gate=false" >> "${GITHUB_OUTPUT}"
+            echo "Reason: push SHA is head of ${opens} open PR(s); skipping duplicate quality-gate"
+          else
+            echo "run_gate=true" >> "${GITHUB_OUTPUT}"
+            echo "Reason: push with no open PR for this SHA (post-merge / direct branch tip)"
+          fi
+
   quality-gate:
+    needs: decide
+    if: needs.decide.outputs.run_gate == 'true'
     uses: ./.github/workflows/quality-gate.yml
