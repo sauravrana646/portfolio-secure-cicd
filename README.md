@@ -65,6 +65,7 @@ flowchart LR
 
 - There is no separate `prod` branch; `main` is prod.
 - Images are signed by **digest** (`ghcr.io/<repo>@sha256:...`), not by mutable tags.
+- Release images are **multi-arch** (`linux/amd64` + `linux/arm64`) manifest lists.
 - Cosign private key material is fetched at release time from Infisical via OIDC (no long-lived secrets in GitHub).
 - The release job targets GitHub Environment **`release`** (required reviewer + only tags matching `v*`).
 
