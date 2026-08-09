@@ -48,21 +48,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3.6.0
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.10.0
 
-      - name: Build and push image
+      # Multi-arch manifest list (amd64 + arm64). Digest is the index digest.
+      - name: Build and push multi-arch image
         id: build
         uses: docker/build-push-action@v6.18.0
         with:
           context: .
           file: Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
       - name: Define immutable IMAGE_REF
         id: meta
@@ -72,7 +78,8 @@ jobs:
           IMAGE_REF="${{ env.REGISTRY }}/${IMAGE_NAME}@${DIGEST}"
           echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
           echo "IMAGE_REF=${IMAGE_REF}" >> "$GITHUB_ENV"
-          echo "Canonical image identity: ${IMAGE_REF}"
+          echo "Canonical multi-arch image identity (manifest list): ${IMAGE_REF}"
+          echo "Platforms: linux/amd64, linux/arm64"
 
       - name: Generate SBOM (Syft) for pushed digest
         uses: anchore/sbom-action@v0.20.0
@@ -139,6 +146,7 @@ jobs:
             |-------|-------|
             | Tag | `ghcr.io/${{ github.repository }}:${{ github.ref_name }}` |
             | Commit | `${{ github.sha }}` |
+            | Platforms | `linux/amd64`, `linux/arm64` (multi-arch manifest list) |
             | Digest (canonical) | `${{ steps.build.outputs.digest }}` |
             | Image ref | `ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}` |
 
@@ -148,9 +156,16 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ github.ref_name }}@${{ steps.build.outputs.digest }}
             ```
 
+            Inspect architectures:
+
+            ```bash
+            docker buildx imagetools inspect \
+              ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ```
+
             ## Supply chain
 
-            - Cosign signature over the digest (key material via Infisical OIDC)
+            - Cosign signature over the **manifest-list digest** (key material via Infisical OIDC)
             - Cosign SPDX SBOM attestation
             - GitHub Actions SLSA build provenance attestation
             - Attached artifact: `sbom.spdx.json` (Syft)

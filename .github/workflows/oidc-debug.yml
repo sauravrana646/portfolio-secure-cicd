@@ -1,0 +1,31 @@
+name: oidc-debug
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Print GitHub OIDC claims
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken("https://github.com/sauravrana646");
+            const payload = JSON.parse(
+              Buffer.from(token.split(".")[1], "base64url").toString("utf8")
+            );
+            console.log(JSON.stringify({
+              sub: payload.sub,
+              aud: payload.aud,
+              iss: payload.iss,
+              repository: payload.repository,
+              ref: payload.ref,
+              environment: payload.environment,
+              job_workflow_ref: payload.job_workflow_ref
+            }, null, 2));
